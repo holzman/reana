@@ -1,0 +1,20 @@
+{{- if not (eq .Values.shared_storage.backend "hostpath") }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "reana.prefix" . }}-db-volume
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.components.reana_db.volume_size }}G
+  {{- if not (eq .Values.shared_storage.backend "custom") }}
+  storageClassName: {{ include "reana.prefix" . }}-shared-volume-storage-class
+  {{- else }}
+  storageClassName: {{ .Values.shared_storage.custom_class }}
+  {{- end }}
+{{- end}}
+

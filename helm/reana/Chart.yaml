@@ -35,3 +35,6 @@ dependencies:
     condition: traefik.enabled
     tags:
       - ingress
+  - name: rabbitmq
+    version: 8.15.3
+    repository: https://charts.bitnami.com/bitnami

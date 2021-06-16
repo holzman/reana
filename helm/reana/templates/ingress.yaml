@@ -62,4 +62,11 @@ spec:
       {{- if .Values.reana_hostname }}
       host: {{ .Values.reana_hostname }}
       {{- end }}
+
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - {{ .Values.reana_hostname }}
+    secretName: {{ tpl .Values.ingress.tls.secretName . }}
+  {{- end }}
 {{- end }}

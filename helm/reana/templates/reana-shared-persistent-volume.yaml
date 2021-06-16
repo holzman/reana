@@ -11,7 +11,11 @@ spec:
   resources:
     requests:
       storage: {{ .Values.shared_storage.volume_size }}G
+  {{- if not (eq .Values.shared_storage.backend "custom") }}
   storageClassName: {{ include "reana.prefix" . }}-shared-volume-storage-class
+  {{- else }}
+  storageClassName: {{ .Values.shared_storage.custom_class }}
+  {{- end }}
 # Which storage class to create depending on the backend
 {{- if eq .Values.shared_storage.backend "cephfs" }}
 ---

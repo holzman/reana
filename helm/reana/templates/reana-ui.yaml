@@ -9,7 +9,7 @@ spec:
   type: "NodePort"
   ports:
   - port: 80
-    targetPort: 80
+    targetPort: 8080
     name: "http"
     protocol: TCP
   selector:
@@ -35,7 +35,7 @@ spec:
         image: {{ .Values.components.reana_ui.image }}
         imagePullPolicy: {{ .Values.components.reana_ui.imagePullPolicy }}
         ports:
-        - containerPort: 80
+        - containerPort: 8080
       {{- if .Values.node_label_infrastructure }}
       {{- $full_label := split "=" .Values.node_label_infrastructure }}
       nodeSelector:

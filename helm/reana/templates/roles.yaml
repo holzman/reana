@@ -1,36 +1,63 @@
 ---
+{{- if .Values.limited_privs }}
+kind: Role
+{{- else }}
 kind: ClusterRole
+{{ end }}
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ include "reana.prefix" . }}-deployment-manager
   namespace: {{ .Release.Namespace }}
 rules:
 - apiGroups: [""] # "" indicates the core API group
+  {{- if .Values.limited_privs }}
+  resources: ["pods", "secrets", "persistentvolumeclaims", "configmaps"]
+  {{- else }}
   resources: ["nodes", "nodes/status", "pods", "pods/log", "secrets", "persistentvolumeclaims", "configmaps"]
+  {{- end }}
   verbs: ["get", "list", "create", "update", "watch"]
+{{- if not .Values.limited_privs }}
 - apiGroups: ["storage.k8s.io"]
   resources: ["storageclasses"]
   verbs: ["*"]
+{{- end }}
+{{- if .Values.limited_privs }}
+- apiGroups: ["batch"]
+{{- else }}
 - apiGroups: ["batch", "extensions"]
+{{- end }}
   resources: ["jobs"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 # Interactive web notebooks permissions
-- apiGroups: ["", "extensions", "apps", "networking.k8s.io"]
-  resources: ["deployments", "services", "ingresses"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
   verbs: ["get", "create", "delete"]
-# Metrics (`kubectl top node/pod`)
-- apiGroups: ["metrics.k8s.io"]
-  resources: ["pods", "nodes"]
-  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions"]
+  resources: ["ingresses"]
+  verbs: ["get", "create", "delete"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "create", "delete"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+{{- if .Values.limited_privs }}
+kind: RoleBinding
+{{- else }}
 kind: ClusterRoleBinding
+{{ end }}
 metadata:
   name: {{ include "reana.prefix" . }}-manage-deployments
   namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
+  {{- if .Values.limited_privs }}
+  kind: Role
+  {{- else }}
   kind: ClusterRole
+  {{ end }}
   name: {{ include "reana.prefix" . }}-deployment-manager
 subjects:
 - kind: ServiceAccount

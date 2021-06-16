@@ -6,13 +6,20 @@
 # `reana_hostname` should be set for third party integrations to work and for
 # production deployments to be secure.
 
+# `limited_privs` should be set to true on openshift/OKD systems where users lack
+#    privileges to list nodes, create storage classes, etc.  `use_security_contexts` should be set to false on these systems as well.
+
+limited_privs: false
+use_security_contexts: true
+
 debug:
   enabled: false
 eos:
   enabled: false
 
 shared_storage:
-  backend: hostpath  # hostpath | cephfs | nfs
+  backend: hostpath  # hostpath | cephfs | nfs | custom
+  custom_class:  # only fill in for custom backend
   volume_size: 200
   access_modes: ReadWriteMany
   shared_volume_mount_path: "/var/reana"
@@ -55,6 +62,7 @@ components:
     image: reanahub/reana-ui:0.8.0-alpha.1
   reana_db:
     enabled: true
+    volume_size: 20
   reana_server:
     imagePullPolicy: IfNotPresent
     image: reanahub/reana-server:0.8.0-alpha.1
@@ -79,9 +87,6 @@ components:
     image: reanahub/reana-workflow-engine-serial:0.8.0-alpha.1
   reana_job_controller:
     image: reanahub/reana-job-controller:0.8.0-alpha.2
-  reana_message_broker:
-    imagePullPolicy: IfNotPresent
-    image: reanahub/reana-message-broker:0.7.1
 
 notifications:
   enabled: false
@@ -95,6 +100,10 @@ ingress:
     kubernetes.io/ingress.class: traefik
     traefik.frontend.entryPoints: "http,https"
     ingress.kubernetes.io/ssl-redirect: "true"
+  tls:
+    # enable tls here if using a native controller instead of traefik
+    enabled: false
+    secretName:
 
 # Permissions
 serviceAccount:
@@ -116,6 +125,26 @@ traefik:
   ssl:
     enabled: true
     generateTLS: true
+
+# rabbitmq subchart
+rabbitmq:
+  clustering:
+    enabled:
+      false
+  rbac:
+    create: false
+  podSecurityContext:
+    enabled: false
+  auth:
+    username: "test"
+    password: "1234"
+  nameOverride: "message-broker"
+  persistence:
+    enabled:
+      false
+  communityPlugins: "https://github.com/rabbitmq/rabbitmq-delayed-message-exchange/releases/download/3.8.9/rabbitmq_delayed_message_exchange-3.8.9-0199d11c.ez"
+  plugins: "rabbitmq_delayed_message_exchange rabbitmq_consistent_hash_exchange"
+
 
 # Quota
 quota:

@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
       - name: db
-        image: postgres:9.6.2
+        image: bitnami/postgresql:9.6.22
         ports:
         - containerPort: 5432
         env:
@@ -56,13 +56,35 @@ spec:
               name: {{ include "reana.prefix" . }}-db-secrets
               key: password
         {{- end }}
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - -e
+              - |
+                exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+                [ -f /opt/bitnami/postgresql/tmp/.initialized] || [ -f /bitnami/postgresql/.initialized]
+          failureThreshold: 6
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+
         volumeMounts:
-          - name: data
-            mountPath: /var/lib/postgresql/data
+        - name: db
+          mountPath: /bitnami/postgresql
+
       volumes:
-        - name: data
-          hostPath:
-            path: /var/reana/db
+      - name: db
+        {{- if not (eq .Values.shared_storage.backend "hostpath") }}
+        persistentVolumeClaim:
+          claimName: {{ include "reana.prefix" . }}-db-volume
+        {{- else }}
+        hostPath:
+          path:  {{ .Values.shared_storage.hostpath.root_path }}/db
+        {{- end }}
+
       {{- if .Values.node_label_infrastructure }}
       {{- $full_label := split "=" .Values.node_label_infrastructure }}
       nodeSelector:
